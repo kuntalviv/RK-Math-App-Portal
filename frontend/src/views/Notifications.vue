@@ -2,7 +2,7 @@
   <main>
     <section class="header">
       <h1>Notifications</h1>
-      <button @click="openAddModal"> Add Notification</button>
+      <button @click="openAddModal">+</button>
     </section>
 
     <p v-if="loading">Loading notifications...</p>
@@ -173,8 +173,13 @@ function formatDateTime(value) {
 <style scoped>
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  margin-block: 20px;
+
+  >* {
+    padding-inline: 20px;
+  }
 }
 
 table {

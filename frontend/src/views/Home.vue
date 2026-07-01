@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 import { onMounted, ref } from 'vue';
 import Events from '@/views/Events.vue';
 import Notifications from '@/views/Notifications.vue';
+import Quotations from '@/views/Quotations.vue';
 import AppLogo from '@/assets/Ramakrishna_Math-Logo.jpg';
 
 const router = useRouter();
@@ -37,6 +38,8 @@ async function signOut() {
         <button :class="{ active: activeTab === 'events' }" @click="activeTab = 'events'">Events</button>
         <button :class="{ active: activeTab === 'notifications' }"
           @click="activeTab = 'notifications'">Notifications</button>
+        <button :class="{ active: activeTab === 'quotations' }"
+          @click="activeTab = 'quotations'">Quotations</button>
       </nav>
       <span class="app-user">
         {{ user?.email }}
@@ -48,10 +51,13 @@ async function signOut() {
   <main class="page">
     <Events v-if="activeTab === 'events'" />
     <Notifications v-if="activeTab === 'notifications'" />
+    <Quotations v-if="activeTab === 'quotations'" />
   </main>
+
 </template>
 
 <style scoped>
+
 .app-header {
   >* {
     margin-block: 8px;
@@ -103,4 +109,5 @@ async function signOut() {
   }
 
 }
+
 </style>
