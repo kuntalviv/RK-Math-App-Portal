@@ -19,6 +19,11 @@
       <input v-model="scheduledAt" type="datetime-local" required />
     </label>
 
+    <label class="horizontal-flow">
+      Active
+      <input v-model="isActive" type="checkbox" />
+    </label>
+
     <section class="actions">
       <button type="submit">Save</button>
       <button type="button" @click="emit('close')">Cancel</button>
@@ -41,6 +46,7 @@ const emit = defineEmits(['save', 'close'])
 const title = ref('')
 const body = ref('')
 const scheduledAt = ref('')
+const isActive = ref(false);
 
 onMounted(() => {
   if (!props.notificationToEdit) return
@@ -48,6 +54,7 @@ onMounted(() => {
   title.value = props.notificationToEdit.title
   body.value = props.notificationToEdit.body
   scheduledAt.value = props.notificationToEdit.scheduled_at?.slice(0, 16) || ''
+  isActive.value = props.notificationToEdit.is_active
 })
 
 function handleSubmit() {
@@ -56,6 +63,7 @@ function handleSubmit() {
     title: title.value,
     body: body.value,
     scheduled_at: scheduledAt.value,
+    is_active: isActive.value,
   })
 }
 </script>
@@ -86,6 +94,13 @@ function handleSubmit() {
 label {
   display: flex;
   flex-direction: column;
+
+  &.horizontal-flow {
+    flex-direction: row;
+    justify-content: center;
+    align-items: end;
+    gap: 10px;
+  }
 }
 
 .actions {

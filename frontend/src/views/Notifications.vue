@@ -14,9 +14,10 @@
           <th>#</th>
           <th>Title</th>
           <th>Scheduled At</th>
-          <th>Sent</th>
+          <th>Status</th>
           <th>Created At</th>
           <th>Sent At</th>
+          <th>Active</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -26,9 +27,10 @@
           <td>{{ index + 1 }}</td>
           <td>{{ notification.title }}</td>
           <td>{{ formatDateTime(notification.scheduled_at) }}</td>
-          <td>{{ notification.sent ? 'Yes' : 'No' }}</td>
+          <td>{{ notification.status }}</td>
           <td>{{ formatDateTime(notification.created_at) }}</td>
           <td>{{ notification.sent_at ? formatDateTime(notification.sent_at) : '-' }}</td>
+          <td>{{ notification.is_active }}</td>
           <td>
             <button type="button" @click="openEditModal(notification)">✏️</button>
             <button type="button" @click="deleteNotification(notification.id)">🗑️</button>
@@ -60,15 +62,15 @@ onMounted(fetchNotifications)
 async function fetchNotifications() {
   const { data, error: supabaseError } = await supabase
     .from('scheduled_notifications')
-    .select('id, title, body, scheduled_at, sent, created_at, sent_at')
+    .select('id, title, body, scheduled_at, status, is_active, created_at, sent_at')
     .order('scheduled_at', { ascending: false })
+
 
   if (supabaseError) {
     error.value = supabaseError.message
   } else {
     notifications.value = data
   }
-
   loading.value = false
 }
 
@@ -96,13 +98,15 @@ function createOrUpdateNotification(notificationData) {
 }
 
 async function createNotification(notificationData) {
+  console.log(notificationData.scheduled_at);
   const { data, error } = await supabase
     .from('scheduled_notifications')
     .insert({
       title: notificationData.title,
       body: notificationData.body,
-      scheduled_at: notificationData.scheduled_at,
-      sent: false,
+      scheduled_at: new Date(notificationData.scheduled_at).toISOString(),
+      status: "pending",
+      is_active: true,
     })
     .select()
     .single()
@@ -117,12 +121,14 @@ async function createNotification(notificationData) {
 }
 
 async function updateNotification(notificationData) {
+
   const { data, error } = await supabase
     .from('scheduled_notifications')
     .update({
       title: notificationData.title,
       body: notificationData.body,
-      scheduled_at: notificationData.scheduled_at,
+      scheduled_at: new Date(notificationData.scheduled_at).toISOString(),
+      is_active: notificationData.is_active,
     })
     .eq('id', notificationData.id)
     .select()
@@ -160,7 +166,8 @@ async function deleteNotification(id) {
 function formatDateTime(value) {
   if (!value) return '-'
 
-  return new Date(value).toLocaleString('en-US', {
+  return new Date(value).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
     month: 'short',
     day: 'numeric',
     year: 'numeric',

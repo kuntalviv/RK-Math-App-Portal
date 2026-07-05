@@ -4,7 +4,7 @@
     <section class="header">
       <h1> Events </h1>
       <button class="add-event-btn" @click="selectedEvent = null; isModalOpen = true">
-        Add Event
+        +
       </button>
     </section>
     <p v-if="loading">Loading events...</p>
@@ -160,7 +160,8 @@ async function deleteEvent(id) {
 
 .header {
   display: flex;
-  justify-content: space-between;
+  gap: 20px;
+  justify-content: center;
   align-items: center;
 }
 

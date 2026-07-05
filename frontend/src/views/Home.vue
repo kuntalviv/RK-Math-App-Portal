@@ -38,8 +38,7 @@ async function signOut() {
         <button :class="{ active: activeTab === 'events' }" @click="activeTab = 'events'">Events</button>
         <button :class="{ active: activeTab === 'notifications' }"
           @click="activeTab = 'notifications'">Notifications</button>
-        <button :class="{ active: activeTab === 'quotations' }"
-          @click="activeTab = 'quotations'">Quotations</button>
+        <!-- <button :class="{ active: activeTab === 'quotations' }" @click="activeTab = 'quotations'">Quotations</button> -->
       </nav>
       <span class="app-user">
         {{ user?.email }}
@@ -57,7 +56,6 @@ async function signOut() {
 </template>
 
 <style scoped>
-
 .app-header {
   >* {
     margin-block: 8px;
@@ -109,5 +107,4 @@ async function signOut() {
   }
 
 }
-
 </style>
