@@ -13,6 +13,7 @@
         <tr>
           <th>#</th>
           <th>Title</th>
+          <th>Launch URL</th>
           <th>Scheduled At</th>
           <th>Status</th>
           <th>Created At</th>
@@ -26,6 +27,7 @@
         <tr v-for="(notification, index) in notifications" :key="notification.id">
           <td>{{ index + 1 }}</td>
           <td>{{ notification.title }}</td>
+          <td>{{ notification.launch_url }}</td>
           <td>{{ formatDateTime(notification.scheduled_at) }}</td>
           <td>{{ notification.status }}</td>
           <td>{{ formatDateTime(notification.created_at) }}</td>
@@ -115,7 +117,6 @@ async function createNotification(notificationData) {
     console.error(error.message)
     return
   }
-
   notifications.value.unshift(data)
   closeModal()
 }

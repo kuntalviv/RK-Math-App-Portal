@@ -1,4 +1,5 @@
-//@ts-nocheck
+// @ts-nocheck
+// @ts-ignore
 <script setup lang="ts">
 
 const props = defineProps({
@@ -8,7 +9,7 @@ const props = defineProps({
   externalUrl: String,
 });
 
-function formatDate(dateString) {
+function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString(
     'en-US',
     {

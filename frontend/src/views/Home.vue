@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-ignore
 <script setup lang="ts">
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'vue-router';
@@ -19,12 +19,7 @@ onMounted(async () => {
 })
 
 async function signOut() {
-  const { error } = supabase.auth.signOut();
-
-  if (error) {
-    console.error("Error signing out: " + error.message);
-    return;
-  }
+  supabase.auth.signOut();
 
   router.push('/login');
 }

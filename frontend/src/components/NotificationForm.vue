@@ -14,6 +14,11 @@
       <textarea v-model="body" rows="4" required></textarea>
     </label>
 
+    <label class="full-width">
+      Launch URL:
+      <input type="text" v-model="launchUrl" rows="4" required />
+    </label>
+
     <label>
       Scheduled At:
       <input v-model="scheduledAt" type="datetime-local" required />
@@ -46,6 +51,7 @@ const emit = defineEmits(['save', 'close'])
 const title = ref('')
 const body = ref('')
 const scheduledAt = ref('')
+const launchUrl = ref('')
 const isActive = ref(false);
 
 onMounted(() => {
@@ -55,6 +61,7 @@ onMounted(() => {
   body.value = props.notificationToEdit.body
   scheduledAt.value = props.notificationToEdit.scheduled_at?.slice(0, 16) || ''
   isActive.value = props.notificationToEdit.is_active
+  launchUrl.value = props.notificationToEdit.launch_url
 })
 
 function handleSubmit() {
@@ -64,6 +71,7 @@ function handleSubmit() {
     body: body.value,
     scheduled_at: scheduledAt.value,
     is_active: isActive.value,
+    launch_url: launchUrl.value
   })
 }
 </script>
