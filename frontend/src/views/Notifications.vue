@@ -64,7 +64,7 @@ onMounted(fetchNotifications)
 async function fetchNotifications() {
   const { data, error: supabaseError } = await supabase
     .from('scheduled_notifications')
-    .select('id, title, body, scheduled_at, status, is_active, created_at, sent_at')
+    .select('id, title, launch_url, body, scheduled_at, status, is_active, created_at, sent_at')
     .order('scheduled_at', { ascending: false })
 
 
@@ -109,6 +109,7 @@ async function createNotification(notificationData) {
       scheduled_at: new Date(notificationData.scheduled_at).toISOString(),
       status: "pending",
       is_active: true,
+      launch_url: notificationData.launch_url,
     })
     .select()
     .single()
@@ -130,6 +131,7 @@ async function updateNotification(notificationData) {
       body: notificationData.body,
       scheduled_at: new Date(notificationData.scheduled_at).toISOString(),
       is_active: notificationData.is_active,
+      launch_url: notificationData.launch_url,
     })
     .eq('id', notificationData.id)
     .select()
