@@ -16,6 +16,10 @@ onMounted(async () => {
   const { data } = await supabase.auth.getSession()
   user.value = data.session?.user ?? null;
 
+  const lastActiveTab = localStorage.getItem("lastActiveTab");
+  if (lastActiveTab) {
+    activeTab.value = lastActiveTab;
+  }
 })
 
 async function signOut() {
@@ -23,6 +27,12 @@ async function signOut() {
 
   router.push('/login');
 }
+
+function handleTabClick(tabName: string) {
+  activeTab.value = tabName;
+  localStorage.setItem("lastActiveTab", tabName);
+}
+
 </script>
 
 <template>
@@ -30,10 +40,10 @@ async function signOut() {
     <section class="app-navigation">
       <strong class="app-title">Admin Portal </strong>
       <nav class="app-tabs">
-        <button :class="{ active: activeTab === 'events' }" @click="activeTab = 'events'">Events</button>
+        <button :class="{ active: activeTab === 'events' }" @click="handleTabClick('events')">Events</button>
         <button :class="{ active: activeTab === 'notifications' }"
-          @click="activeTab = 'notifications'">Notifications</button>
-        <button :class="{ active: activeTab === 'banners' }" @click="activeTab = 'banners'">Banners</button>
+          @click="handleTabClick('notifications')">Notifications</button>
+        <button :class="{ active: activeTab === 'banners' }" @click="handleTabClick('banners')">Banners</button>
       </nav>
       <span class="app-user">
         {{ user?.email }}

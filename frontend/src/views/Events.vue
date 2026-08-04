@@ -14,18 +14,25 @@
       <article v-for="event in events" :key="event.id" class="event-item">
         <div class="event-actions">
           <button type="button" @click="handleEditClick(event)">✏️</button>
-          <button type="button" @click="deleteEvent(event.id)">🗑️</button>
+          <button type="button" @click="handleDelete(event.id)">🗑️</button>
         </div>
+        <div class="event-header">
+          <strong>Title: {{ event.name }}</strong>
+          <strong>Status: {{ event.is_active ? "Active" : "Inactive" }} </strong>
 
-        <EventCard :event-date="event.date" :venue="event.venue" :image-url="event.image_url"
-          :external-url="event.event_url" />
+        </div>
+        <EventCard :event-date="event.date" :event-end-date="event.end_date" :venue="event.venue"
+          :image-url="event.image_url" :external-url="event.event_url" />
       </article>
     </section>
     <section v-if="isModalOpen" class="modal-backdrop">
-      <EventForm class="modal-content" :event-to-edit="selectedEvent" @save="createOrUpdateEvent"
-        @close="isModalOpen = false" />
+      <EventForm class="modal-content" :event-to-edit="selectedEvent" @save="handleSave" @close="isModalOpen = false" />
     </section>
   </main>
+
+  <section v-if="isSaving" class="modal-backdrop">
+    <div class="spinner"></div>
+  </section>
 </template>
 
 <script setup lang="js">
@@ -33,17 +40,19 @@ import { supabase } from '@/lib/supabase'
 import { ref, onMounted } from 'vue'
 import EventCard from '@/components/EventCard.vue';
 import EventForm from '@/components/EventForm.vue';
+import { createNotification, deleteChildNotifications } from '@/utilities/db.js';
 
 const isModalOpen = ref(false);
 const events = ref([]);
 const loading = ref(true);
+const isSaving = ref(false);
 const error = ref(null);
 const selectedEvent = ref(null);
 
 onMounted(async () => {
   const { data, error: supabaseError } = await supabase
     .from('Events')
-    .select('id, name, date, venue, image_url, event_url')
+    .select('*')
 
   if (supabaseError) {
     error.value = supabaseError.message
@@ -61,12 +70,17 @@ function handleEditClick(event) {
 }
 
 async function editEvent(eventData) {
+  isSaving.value = true;
   const dbEvent = {
     name: eventData.name,
+    is_active: eventData.is_active,
     date: eventData.date,
+    end_date: eventData.end_date,
     image_url: eventData.image_url,
     venue: eventData.venue,
     event_url: eventData.event_url,
+    description: eventData.description,
+    auto_create_notification: eventData.auto_create_notification,
   }
   const { data, error } = await supabase
     .from('Events')
@@ -78,32 +92,75 @@ async function editEvent(eventData) {
   if (error) {
     console.error(error.message); return;
   }
-
   events.value = events.value.map(event => {
-    return data.id === eventData.id ? data : event;
+    return event.id === eventData.id ? data : event;
   })
 
   isModalOpen.value = false;
   selectedEvent.value = null;
+  isSaving.value = false;
+
+  return data;
 
 }
 
-function createOrUpdateEvent(eventData) {
+async function handleSave(eventData) {
+  const updatedEvent = await createOrUpdateEvent(eventData);
+
+  if (eventData.auto_create_notification) {
+    const notificationDate = new Date(eventData.date);
+    notificationDate.setDate(notificationDate.getDate() - 1);
+
+    const data = {
+      title: eventData.name,
+      body: eventData.description,
+      scheduled_at: notificationDate.toISOString(),
+      status: "pending",
+      is_active: true,
+      launch_url: eventData.launch_url,
+      event_id: updatedEvent.id,
+    }
+    if (eventData.id) {
+      console.log(eventData.id);
+      //TODO: Make the following atomic later
+      await deleteChildNotifications(eventData.id);
+      await createNotification(data);
+
+    } else {
+      await createNotification(data);
+    }
+  }
+
+}
+
+async function handleDelete(eventId) {
+  loading.value = true;
+  await deleteEvent(eventId);
+  await deleteChildNotifications(eventId);
+
+  loading.value = false
+}
+
+async function createOrUpdateEvent(eventData) {
   if (selectedEvent.value) {
-    editEvent(eventData)
+    return await editEvent(eventData)
   } else {
-    createEvent(eventData)
+    return await createEvent(eventData)
   }
 }
 
 async function createEvent(eventData) {
-  console.log("Event Data: " + JSON.stringify(eventData));
+  isSaving.value = true;
   const dbEvent = {
     name: eventData.name,
+    is_active: eventData.is_active,
     date: eventData.date,
+    end_date: eventData.end_date,
     image_url: eventData.image_url,
     venue: eventData.venue,
     event_url: eventData.event_url,
+    description: eventData.description,
+    auto_create_notification: eventData.auto_create_notification,
   }
   const { data, error } = await supabase
     .from('Events')
@@ -117,6 +174,9 @@ async function createEvent(eventData) {
 
   events.value.push(data);
   isModalOpen.value = false;
+  isSaving.value = false;
+
+  return data;
 }
 
 async function deleteEvent(id) {
@@ -138,6 +198,26 @@ async function deleteEvent(id) {
 </script>
 
 <style scoped>
+.event-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #eee;
+  border-top: 5px solid #ff9800;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -166,7 +246,7 @@ async function deleteEvent(id) {
 }
 
 .event-item {
-  width: 400px;
+  align-self: center;
 }
 
 .event-actions {
@@ -178,7 +258,8 @@ async function deleteEvent(id) {
 
 .event-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 16px;
 }
 </style>

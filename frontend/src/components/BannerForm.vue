@@ -4,9 +4,24 @@
             {{ bannerToEdit ? 'Edit banner' : 'Add banner' }}
         </h2>
 
+        <label class="full-width">
+            Title:
+            <input v-model="title" type="text" required />
+        </label>
+
+        <label class="full-width">
+            Description:
+            <textarea v-model="description" rows="4" required></textarea>
+        </label>
+
         <label class="full-width" for="imagePath">
             Image URL:
             <input v-model="imageUrl" id="imagePath" name="imagePath" type="text" />
+        </label>
+
+        <label class="full-width" for="launchUrl">
+            Launch URL:
+            <input v-model="launchUrl" id="launchUrl" name="launchUrl" type="text" />
         </label>
 
         <label class="horizontal-flow full-width">
@@ -24,6 +39,9 @@ import { ref, onMounted } from 'vue';
 
 const isActive = ref(true);
 const imageUrl = ref('');
+const launchUrl = ref('');
+const title = ref('');
+const description = ref('');
 
 const props = defineProps({
     bannerToEdit: {
@@ -39,6 +57,9 @@ onMounted(() => {
 
     isActive.value = props.bannerToEdit.is_active;
     imageUrl.value = props.bannerToEdit.image_url;
+    launchUrl.value = props.bannerToEdit.launch_url;
+    title.value = props.bannerToEdit.title;
+    description.value = props.bannerToEdit.description;
 });
 
 function handleSubmit() {
@@ -46,6 +67,9 @@ function handleSubmit() {
         id: props.bannerToEdit?.id,
         image_url: imageUrl.value,
         is_active: isActive.value,
+        launch_url: launchUrl.value,
+        title: title.value,
+        description: description.value,
     });
 }
 

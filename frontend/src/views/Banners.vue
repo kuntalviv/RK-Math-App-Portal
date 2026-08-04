@@ -8,6 +8,7 @@ const error = ref('');
 const selectedBanner = ref(null);
 const banners = ref([]);
 const isModalOpen = ref(false);
+const isSaving = ref(false);
 
 onMounted(async () => {
     await fetchBanners();
@@ -18,7 +19,7 @@ async function fetchBanners() {
 
     const { data, error: fetchError } = await supabase
         .from('Banners')
-        .select('id, is_active, image_url')
+        .select('id, is_active, image_url, launch_url, title, description')
         .order('id', { ascending: false });
 
     if (fetchError) {
@@ -47,11 +48,15 @@ function closeModal() {
 }
 
 async function createBanner(bannerData) {
+    isSaving.value = true;
     const { data, error } = await supabase
         .from('Banners')
         .insert({
             is_active: bannerData.is_active,
             image_url: bannerData.image_url,
+            launch_url: bannerData.launch_url,
+            title: bannerData.title,
+            description: bannerData.description,
         })
         .select()
         .single();
@@ -63,14 +68,19 @@ async function createBanner(bannerData) {
 
     banners.value.unshift(data);
     closeModal();
+    isSaving.value = false;
 }
 
 async function updateBanner(bannerData) {
+    isSaving.value = true;
     const { data, error } = await supabase
         .from('Banners')
         .update({
             is_active: bannerData.is_active,
             image_url: bannerData.image_url,
+            launch_url: bannerData.launch_url,
+            title: bannerData.title,
+            description: bannerData.description,
         })
         .eq('id', bannerData.id)
         .select()
@@ -86,6 +96,7 @@ async function updateBanner(bannerData) {
     );
 
     closeModal();
+    isSaving.value = false;
 }
 
 async function createOrUpdateBanner(bannerData) {
@@ -124,15 +135,27 @@ async function deleteBanner(bannerId) {
         <p v-if="loading">Loading...</p>
         <p v-else-if="error">{{ error }}</p>
 
-        <section v-else class="banner-card-layout" v-for="banner in banners" :key="banner.id">
-            <div class="banner-actions">
-                <button type="button" @click="handleEditClick(banner)">✏️</button>
-                <button type="button" @click="deleteBanner(banner.id)">🗑️</button>
-            </div>
+        <section v-else class="banner-card-layout">
 
-            <article class="banner-card">
-                <img :src="banner.image_url" />
-            </article>
+            <section class="banner-card" v-for="banner in banners" :key="banner.id">
+
+                <div class="banner-actions">
+                    <button type="button" @click="handleEditClick(banner)">✏️</button>
+                    <button type="button" @click="deleteBanner(banner.id)">🗑️</button>
+                </div>
+                <div class="banner-header">
+                    <strong>Title: {{ banner.title }}</strong>
+                    <strong>Status: {{ banner.is_active ? "Active" : "Inactive" }} </strong>
+
+                </div>
+
+                <a :href="'https://' + banner.launch_url">
+                    <article>
+                        <img :src="banner.image_url" />
+                    </article>
+                </a>
+            </section>
+
         </section>
     </main>
 
@@ -140,9 +163,33 @@ async function deleteBanner(bannerId) {
         <BannerForm class="modal-content" :banner-to-edit="selectedBanner" @save="createOrUpdateBanner"
             @close="closeModal" />
     </section>
+
+    <section v-if="isSaving" class="modal-backdrop">
+        <div class="spinner"></div>
+    </section>
 </template>
 
 <style scoped>
+.banner-header {
+    display: flex;
+    flex-direction: column;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #eee;
+    border-top: 5px solid #ff9800;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .banner-actions {
     display: flex;
     justify-content: flex-end;
@@ -181,14 +228,16 @@ async function deleteBanner(bannerId) {
     height: 30px;
 }
 
-main {
+.banner-card-layout {
     display: flex;
-    justify-content: center;
-
+    justify-content: space-evenly;
+    flex-wrap: wrap;
 }
 
 
 .banner-card {
+    flex-basis: 40%;
+
     gap: 16px;
     margin-block-end: 8px;
     padding: 20px;
@@ -199,9 +248,14 @@ main {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    & img {
+        max-width: 100%;
+        height: auto;
+    }
 }
 
-.banner-card-layout:hover {
+.banner-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }

@@ -4,6 +4,7 @@
 
 const props = defineProps({
   eventDate: String,
+  eventEndDate: String,
   venue: String,
   imageUrl: String,
   externalUrl: String,
@@ -26,7 +27,10 @@ function formatDate(dateString: string) {
   <a class="event-card" :href="externalUrl" target="_blank" rel="noopener noreferrer">
     <img class="event-image" :src="imageUrl" alt="Event Image" />
     <div class="event-info">
-      <p>Date: {{ formatDate(eventDate) }}</p>
+      <p>Date: {{(() => {
+        if (!eventEndDate || eventDate === eventEndDate) return formatDate(eventDate);
+        else return `${formatDate(eventDate)} - ${formatDate(eventEndDate)}`;
+      })()}} </p>
       <h4>Venue: {{ venue }}</h4>
     </div>
   </a>
@@ -39,10 +43,11 @@ function formatDate(dateString: string) {
   display: flex;
   justify-content: flex-start;
   flex-direction: column;
+  width: 80%;
+  max-height: 800px;
 }
 
 .event-card {
-  width: 400px;
   border: 2px solid black;
   border-radius: 8px;
   display: block;
@@ -51,7 +56,7 @@ function formatDate(dateString: string) {
 
 .event-image {
   width: 100%;
-  height: 250px;
+  max-height: 600px;
   object-fit: cover;
 }
 

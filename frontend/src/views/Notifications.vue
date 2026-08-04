@@ -35,7 +35,7 @@
           <td>{{ notification.is_active }}</td>
           <td>
             <button type="button" @click="openEditModal(notification)">✏️</button>
-            <button type="button" @click="deleteNotification(notification.id)">🗑️</button>
+            <button type="button" @click="handleDelete(notification.id)">🗑️</button>
           </td>
         </tr>
       </tbody>
@@ -46,35 +46,59 @@
         @close="closeModal" />
     </section>
   </main>
+
+  <section v-if="isSaving" class="modal-backdrop">
+    <div class="spinner"></div>
+  </section>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { supabase } from '@/lib/supabase'
 import NotificationForm from '@/components/NotificationForm.vue'
+import { fetchNotifications, createNotification, updateNotification, deleteNotification, formatDateTime } from '@/utilities/db.js';
 
 const notifications = ref([])
 const loading = ref(true)
+const isSaving = ref(false)
 const error = ref(null)
 const isModalOpen = ref(false)
 const selectedNotification = ref(null)
 
-onMounted(fetchNotifications)
+onMounted(async () => {
+  loading.value = true;
+  notifications.value = await fetchNotifications()
+  loading.value = false;
+})
 
-async function fetchNotifications() {
-  const { data, error: supabaseError } = await supabase
-    .from('scheduled_notifications')
-    .select('id, title, launch_url, body, scheduled_at, status, is_active, created_at, sent_at')
-    .order('scheduled_at', { ascending: false })
+async function createOrUpdateNotification(notificationData) {
+  isSaving.value = true;
 
+  let data;
 
-  if (supabaseError) {
-    error.value = supabaseError.message
+  if (selectedNotification.value) {
+    data = await updateNotification(notificationData)
+    notifications.value = notifications.value.map(notification =>
+      notification.id === data.id ? data : notification
+    )
   } else {
-    notifications.value = data
+    data = await createNotification(notificationData)
+    notifications.value.unshift(data)
   }
-  loading.value = false
+
+  closeModal()
+  isSaving.value = false;
+
 }
+
+async function handleDelete(notificationId) {
+  const confirmed = confirm('Delete this notification?')
+  if (!confirmed) return;
+
+  await deleteNotification(notificationId);
+
+  notifications.value = notifications.value.filter(notification => notification.id !== notificationId);
+}
+
 
 function openAddModal() {
   selectedNotification.value = null
@@ -91,96 +115,24 @@ function closeModal() {
   isModalOpen.value = false
 }
 
-function createOrUpdateNotification(notificationData) {
-  if (selectedNotification.value) {
-    updateNotification(notificationData)
-  } else {
-    createNotification(notificationData)
-  }
-}
-
-async function createNotification(notificationData) {
-  console.log(notificationData.scheduled_at);
-  const { data, error } = await supabase
-    .from('scheduled_notifications')
-    .insert({
-      title: notificationData.title,
-      body: notificationData.body,
-      scheduled_at: new Date(notificationData.scheduled_at).toISOString(),
-      status: "pending",
-      is_active: true,
-      launch_url: notificationData.launch_url,
-    })
-    .select()
-    .single()
-
-  if (error) {
-    console.error(error.message)
-    return
-  }
-  notifications.value.unshift(data)
-  closeModal()
-}
-
-async function updateNotification(notificationData) {
-
-  const { data, error } = await supabase
-    .from('scheduled_notifications')
-    .update({
-      title: notificationData.title,
-      body: notificationData.body,
-      scheduled_at: new Date(notificationData.scheduled_at).toISOString(),
-      is_active: notificationData.is_active,
-      launch_url: notificationData.launch_url,
-    })
-    .eq('id', notificationData.id)
-    .select()
-    .single()
-
-  if (error) {
-    console.error(error.message)
-    return
-  }
-
-  notifications.value = notifications.value.map(notification =>
-    notification.id === data.id ? data : notification
-  )
-
-  closeModal()
-}
-
-async function deleteNotification(id) {
-  const confirmed = confirm('Delete this notification?')
-  if (!confirmed) return
-
-  const { error } = await supabase
-    .from('scheduled_notifications')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error(error.message)
-    return
-  }
-
-  notifications.value = notifications.value.filter(notification => notification.id !== id)
-}
-
-function formatDateTime(value) {
-  if (!value) return '-'
-
-  return new Date(value).toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
 </script>
 
 <style scoped>
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #eee;
+  border-top: 5px solid #ff9800;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .header {
   display: flex;
   justify-content: center;
