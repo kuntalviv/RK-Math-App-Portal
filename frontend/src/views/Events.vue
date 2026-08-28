@@ -117,7 +117,7 @@ async function handleSave(eventData) {
       scheduled_at: notificationDate.toISOString(),
       status: "pending",
       is_active: true,
-      launch_url: eventData.launch_url,
+      launch_url: eventData.event_url,
       event_id: updatedEvent.id,
     }
     if (eventData.id) {
